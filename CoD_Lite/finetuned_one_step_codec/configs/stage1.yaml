@@ -1,18 +1,16 @@
 # Finetuned One-Step CoD-Lite: resolution=512, DConv
-# Stage 1: LoRA then full finetune from pretrained CoD checkpoint
+# Stage 1: LoRA training from pretrained CoD checkpoint
 # Per-bpp parameters (ds, codebook_bits) are set via entry script overrides.
 seed_everything: true
 tags:
   exp: Finetuned_One_Step_CoD
 pretrained_ckpt_path: null
 pretrained_ema: true
-lora_steps: 200000
-full_ft_steps: 200000
 
 trainer:
   default_root_dir: ~
   accelerator: auto
-  strategy: auto
+  strategy: ddp_find_unused_parameters_true
   devices: auto
   num_nodes: 1
   precision: bf16-mixed

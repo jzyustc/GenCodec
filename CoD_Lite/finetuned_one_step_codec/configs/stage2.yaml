@@ -71,6 +71,9 @@ model:
       num_cond_blocks: 26
       nerf_mlpratio: 2
       use_checkpoint: false
+      ds: 32
+      codebook_bits: 4
+      up2x: true
   dmd_trainer:
     class_path: finetuned_one_step_codec.training.training.CoDPerceptualLossTrainer
     init_args:

@@ -145,7 +145,6 @@ class LightningModel(pl.LightningModule):
                  lr_scheduler: LRSchedulerCallable = None,
                  eval_original_model: bool = False,
                  latent: bool = False,
-                 use_lora: bool = True,
                  ):
         super().__init__()
         self.vae = vae
@@ -158,23 +157,20 @@ class LightningModel(pl.LightningModule):
         self.latent = latent
         self._strict_loading = False
 
-        if use_lora:
-            lora_target_modules = find_lora_target_modules(
-                self.net,
-                target_types=(nn.Linear, nn.Conv2d, nn.Conv1d),
-                exclude_modules=["y_embedder", "conv2"]
-            )
-            lora_config = LoraConfig(
-                r=32, lora_alpha=32,
-                target_modules=lora_target_modules,
-                lora_dropout=0.0, bias="none",
-                modules_to_save=["y_embedder", "conv2"]
-            )
-            self.net = get_peft_model(self.net, lora_config)
-            print("PEFT Model Trainable Parameters:")
-            self.net.print_trainable_parameters()
-        else:
-            print("Full fine-tuning (no LoRA)")
+        # LoRA
+        lora_target_modules = find_lora_target_modules(
+            self.net,
+            target_types=(nn.Linear, nn.Conv2d, nn.Conv1d),
+            exclude_modules=["y_embedder", "conv2"]
+        )
+        lora_config = LoraConfig(
+            r=32, lora_alpha=32,
+            target_modules=lora_target_modules,
+            lora_dropout=0.0, bias="none",
+            modules_to_save=["y_embedder", "conv2"]
+        )
+        self.net = get_peft_model(self.net, lora_config)
+        self.net.print_trainable_parameters()
 
     def configure_model(self) -> None:
         self.trainer.strategy.barrier()

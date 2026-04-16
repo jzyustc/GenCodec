@@ -64,7 +64,7 @@ def get_bpp_overrides(bpp):
 
 
 def run_stage1(args, ngpu, exp_dir):
-    """Stage 1: LoRA -> Merge -> Full FT, or direct Full FT."""
+    """Stage 1: LoRA -> Merge."""
     stage = STAGES[0]
     name = stage["name"]
     res = stage["res"]
@@ -75,14 +75,12 @@ def run_stage1(args, ngpu, exp_dir):
     template = "finetuned_one_step_codec/configs/stage1.yaml"
     with open(template, "r") as f:
         raw_cfg = yaml.safe_load(f)
-    lora_steps = raw_cfg.get("lora_steps")
-    full_ft_steps = raw_cfg.get("full_ft_steps")
 
     cfg = raw_cfg
     meta = cfg["data"]["train_dataset"]["init_args"]["metadata"]
     test_root = cfg["data"]["eval_dataset"]["init_args"]["root"]
 
-    def build_overrides(tags_exp, net_ckpt, pretrain_prefix, max_steps=None):
+    def build_overrides(tags_exp, net_ckpt, pretrain_prefix):
         ov = {
             "trainer.default_root_dir": exp_dir,
             "trainer.accumulate_grad_batches": acc,
@@ -99,16 +97,10 @@ def run_stage1(args, ngpu, exp_dir):
         ov.update(get_bpp_overrides(args.bpp))
         if args.dinov2_path:
             ov["model.codec_trainer.init_args.net_loss.init_args.encoder.init_args.weight_path"] = args.dinov2_path
-        if max_steps is not None:
-            ov["trainer.max_steps"] = max_steps
         return ov
 
-    def save_config(stage_dir, use_lora):
+    def save_config(stage_dir):
         cfg_copy = dict(cfg)
-        cfg_copy.pop("lora_steps", None)
-        cfg_copy.pop("full_ft_steps", None)
-        if not use_lora:
-            cfg_copy.setdefault("model", {})["use_lora"] = False
         # Apply bpp overrides directly into config (CLI overrides may not work reliably)
         bpp_params = BPP_PARAMS[args.bpp]
         cfg_copy["model"]["net"]["init_args"]["ds"] = bpp_params["ds"]
@@ -118,66 +110,38 @@ def run_stage1(args, ngpu, exp_dir):
             yaml.dump(cfg_copy, f)
         return path
 
-    if args.use_lora:
-        # Phase 1: LoRA training
-        lora_dir = os.path.join(exp_dir, f"exp_{name}_lora")
-        os.makedirs(lora_dir, exist_ok=True)
+    # Phase 1: LoRA training
+    lora_dir = os.path.join(exp_dir, f"exp_{name}")
+    os.makedirs(lora_dir, exist_ok=True)
 
-        if os.path.exists(os.path.join(lora_dir, ".done")):
-            print(f"[skip] {name}_lora already complete")
-        else:
-            print(f"\n[stage1/lora] res={res} bs={bs}x{ngpu}x{acc}={bs*ngpu*acc} steps={lora_steps}")
-            overrides = build_overrides(f"{name}_lora", args.cod_ckpt, "ema_denoiser.", lora_steps)
-            config_path = save_config(lora_dir, use_lora=True)
-            run_train(lora_dir, config_path, overrides, "finetuned_one_step_codec/main_stage1.py")
-            with open(os.path.join(lora_dir, ".done"), "w") as f:
-                f.write("done\n")
-
-        # Phase 2: Merge LoRA weights
-        ckpt_dir = find_latest_checkpoint_dir(lora_dir)
-        if ckpt_dir is None:
-            raise RuntimeError(f"LoRA checkpoint not found in {lora_dir}")
-
-        merged_ckpt = os.path.join(ckpt_dir, "checkpoint-state_dict-merged.pt")
-        if not os.path.exists(merged_ckpt):
-            print(f"\n[stage1/merge] Merging LoRA weights...")
-            input_ckpt = os.path.join(ckpt_dir, "checkpoint-state_dict.pt")
-            cmd = (f'PYTHONPATH=./ python -m finetuned_one_step_codec.utils.merge_lora_stage1 '
-                   f'--input "{input_ckpt}" --output "{merged_ckpt}" '
-                   f'--config "{template}" --lora-rank {args.lora_rank}')
-            subprocess.run(cmd, shell=True, check=True)
-        else:
-            print(f"[skip] LoRA merge already done")
-
-        # Phase 3: Full FT from merged weights
-        ft_dir = os.path.join(exp_dir, f"exp_{name}")
-        os.makedirs(ft_dir, exist_ok=True)
-
-        if os.path.exists(os.path.join(ft_dir, ".done")):
-            print(f"[skip] {name} already complete")
-        else:
-            print(f"\n[stage1/ft] res={res} bs={bs}x{ngpu}x{acc}={bs*ngpu*acc} steps={full_ft_steps}")
-            overrides = build_overrides(name, merged_ckpt, "net.", full_ft_steps)
-            config_path = save_config(ft_dir, use_lora=False)
-            run_train(ft_dir, config_path, overrides, "finetuned_one_step_codec/main_stage1.py")
-            with open(os.path.join(ft_dir, ".done"), "w") as f:
-                f.write("done\n")
+    if os.path.exists(os.path.join(lora_dir, ".done")):
+        print(f"[skip] {name} already complete")
     else:
-        # Direct full FT (no LoRA)
-        ft_dir = os.path.join(exp_dir, f"exp_{name}")
-        os.makedirs(ft_dir, exist_ok=True)
+        print(f"\n[stage1/lora] res={res} bs={bs}x{ngpu}x{acc}={bs*ngpu*acc}")
+        overrides = build_overrides(name, args.cod_ckpt, "ema_denoiser.")
+        config_path = save_config(lora_dir)
+        run_train(lora_dir, config_path, overrides, "finetuned_one_step_codec/main_stage1.py")
+        with open(os.path.join(lora_dir, ".done"), "w") as f:
+            f.write("done\n")
 
-        if os.path.exists(os.path.join(ft_dir, ".done")):
-            print(f"[skip] {name} already complete")
-        else:
-            print(f"\n[stage1/ft] res={res} bs={bs}x{ngpu}x{acc}={bs*ngpu*acc} steps={full_ft_steps}")
-            overrides = build_overrides(name, args.cod_ckpt, "ema_denoiser.", full_ft_steps)
-            config_path = save_config(ft_dir, use_lora=False)
-            run_train(ft_dir, config_path, overrides, "finetuned_one_step_codec/main_stage1.py")
-            with open(os.path.join(ft_dir, ".done"), "w") as f:
-                f.write("done\n")
+    # Phase 2: Merge LoRA weights
+    ckpt_dir = find_latest_checkpoint_dir(lora_dir)
+    if ckpt_dir is None:
+        raise RuntimeError(f"LoRA checkpoint not found in {lora_dir}")
 
-    return os.path.join(exp_dir, f"exp_{name}")
+    merged_ckpt = os.path.join(ckpt_dir, "checkpoint-state_dict-merged.pt")
+    if not os.path.exists(merged_ckpt):
+        print(f"\n[stage1/merge] Merging LoRA weights...")
+        input_ckpt = os.path.join(ckpt_dir, "checkpoint-state_dict.pt")
+        merge_config = os.path.join(lora_dir, "config.yaml")  # use saved config with correct bpp
+        cmd = (f'PYTHONPATH=./ python -m finetuned_one_step_codec.utils.merge_lora_stage1 '
+               f'--input "{input_ckpt}" --output "{merged_ckpt}" '
+               f'--config "{merge_config}" --lora-rank {args.lora_rank}')
+        subprocess.run(cmd, shell=True, check=True)
+    else:
+        print(f"[skip] LoRA merge already done")
+
+    return lora_dir
 
 
 def run_stage2(args, ngpu, exp_dir, stage1_ckpt):
@@ -254,8 +218,6 @@ if __name__ == "__main__":
                         help="Pretrained CoD checkpoint path")
     parser.add_argument("--dmd_ckpt", type=str, required=True,
                         help="Pretrained DMD checkpoint path")
-    parser.add_argument("--use_lora", action="store_true",
-                        help="Use LoRA -> merge -> full FT pipeline (default: direct full FT)")
     parser.add_argument("--lora_rank", type=int, default=32,
                         help="LoRA rank (default: 32)")
     parser.add_argument("--dinov2_path", type=str, default=None,
@@ -267,15 +229,18 @@ if __name__ == "__main__":
     exp_dir = os.path.join(args.save_dir, f"exp_{args.exp_name}")
     os.makedirs(exp_dir, exist_ok=True)
 
-    print(f"One-Step CoD-Lite: {args.exp_name}  bpp={args.bpp}  lora={args.use_lora}  gpus={ngpu}")
+    print(f"One-Step CoD-Lite: {args.exp_name}  bpp={args.bpp}  gpus={ngpu}")
 
     try:
         stage1_dir = run_stage1(args, ngpu, exp_dir)
 
-        # Find stage1 final checkpoint for stage2
-        stage1_ckpt = find_latest_checkpoint_dir(stage1_dir)
-        if stage1_ckpt is None:
+        # Find stage1 final checkpoint for stage2 (use merged weights)
+        stage1_ckpt_dir = find_latest_checkpoint_dir(stage1_dir)
+        if stage1_ckpt_dir is None:
             raise RuntimeError(f"No checkpoint found in {stage1_dir}")
+        stage1_ckpt = os.path.join(stage1_ckpt_dir, "checkpoint-state_dict-merged.pt")
+        if not os.path.exists(stage1_ckpt):
+            raise RuntimeError(f"Merged checkpoint not found: {stage1_ckpt}")
         print(f"\nStage1 checkpoint: {stage1_ckpt}")
 
         run_stage2(args, ngpu, exp_dir, stage1_ckpt)
