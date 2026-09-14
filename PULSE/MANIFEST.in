@@ -1,0 +1,15 @@
+include LICENSE
+include requirements*.txt
+recursive-include codec/models/entropy/extensions/cpp/py_rans *.h *.cpp
+recursive-include configs *.yaml
+recursive-include deployment *.md
+recursive-include deployment *.h *.hpp *.cpp
+recursive-include deployment setup.py pyproject.toml
+recursive-include docs *.md *.json
+exclude docs/validation.md docs/validation.json
+recursive-include assets *.png
+prune tests
+global-exclude *.so *.o *.pyc
+prune deployment/cpu_amd_epyc_9v84_single_thread/cpp/build
+prune deployment/cpu_amd_epyc_9v84_single_thread/entropy_cpp/build
+prune deployment/gpu_nvidia_h100/cpp/build

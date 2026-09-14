@@ -15,7 +15,7 @@
 - **Practical Real-Time Coding** — Efficient encoding and decoding suitable for real-time and on-device deployment.
 - **Diverse Applications** — General-purpose compression foundations that extend to more vision tasks and applications.
 
-This repository hosts models, code, and evaluation tools for our published generative compression methods.
+This repository hosts models, code, and evaluation tools for our generative and practical neural compression methods.
 
 ## Projects
 
@@ -28,6 +28,12 @@ This repository hosts models, code, and evaluation tools for our published gener
   - Lightweight real-time codec: 28M encoder + 52M decoder & 60 FPS encoding / 42 FPS decoding at 1080p on a single A100 GPU
   - Powered by a one-step pixel-space convolutional diffusion-based decoding framework.
   - Effective training pipeline: Compression-oriented diffusion pre-train → Distillation-guided and adversarial one-step fine-tune
+
+- [`PULSE`](PULSE) — **PULSE: Unlocking Practical Image Compression on Single-Thread CPU** [[Models]](https://huggingface.co/zhaoyangjia/PULSE)
+  - Ultra-low-complexity receiver: 5.2 kMAC/pixel for the base model, designed for single-thread CPU decoding
+  - Bit-exact entropy coding with integer Linear CDF prediction, a content-adaptive Meta Prior, and CPU rANS
+  - Four variable-rate MSE/perceptual models, with training recipes, independent `.pulse` compression/decompression, and CPU, H100 GPU, and mobile NPU deployment tools
+  - [Training](PULSE/docs/training.md) · [Deployment](PULSE/docs/deployment.md)
 
 ## License
 

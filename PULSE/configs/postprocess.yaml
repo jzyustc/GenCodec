@@ -1,0 +1,17 @@
+num_images: 4035
+crop: 512
+seed: 0
+em_iters: 6
+init_steps: 500
+refine_steps: 300
+lr: 0.01
+symbol_radius: 127
+assign_chunk: 8192
+index_merge: true
+y_cdf:
+  mse:
+    num_images: 64
+    crop: 1024
+  perceptual:
+    num_images: 128
+    crop: 512
