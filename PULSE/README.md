@@ -1,7 +1,7 @@
 <h2 align="center">PULSE: Unlocking Practical Image Compression on Single-Thread CPU</h2>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/arXiv-Coming%20soon-b31b1b.svg" alt="arXiv: coming soon">
+  <a href="https://arxiv.org/abs/2609.18602"><img src="https://img.shields.io/badge/arXiv-2609.18602-b31b1b.svg" alt="arXiv: 2609.18602"></a>
   <a href="https://github.com/microsoft/GenCodec/tree/main/PULSE"><img src="https://img.shields.io/badge/Code-GitHub-blue.svg" alt="GitHub"></a>
   <a href="https://huggingface.co/zhaoyangjia/PULSE"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-blue.svg" alt="Hugging Face"></a>
 </p>
@@ -15,6 +15,7 @@
 **MSE or perceptual optimization** for practical compression on
 resource-constrained hardware.
 
+[Paper](https://arxiv.org/abs/2609.18602) |
 [Training](docs/training.md) |
 [Deployment](docs/deployment.md)
 
@@ -173,6 +174,18 @@ multi-GPU training and resume commands are in [Training](docs/training.md).
 and enables Index Merge fitting by default. It creates a new, validated checkpoint at
 `--output`, including all three matching model files and `SHA256SUMS`;
 the training checkpoint is not overwritten.
+
+## 📖 Citation
+
+```bibtex
+@article{jia2026pulse,
+    title     = {{PULSE}: Unlocking Practical Image Compression on Single-Thread {CPU}},
+    author    = {Jia, Zhaoyang and Zhang, Tianyu and Zheng, Zihan and Xie, Wenxuan and Li, Jiahao and Li, Bin and Li, Houqiang and Lu, Yan},
+    journal   = {arXiv preprint arXiv:2609.18602},
+    year      = {2026},
+    url       = {https://arxiv.org/abs/2609.18602}
+}
+```
 
 ## 🙏 Acknowledgments and license
 

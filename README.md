@@ -29,7 +29,7 @@ This repository hosts models, code, and evaluation tools for our generative and 
   - Powered by a one-step pixel-space convolutional diffusion-based decoding framework.
   - Effective training pipeline: Compression-oriented diffusion pre-train → Distillation-guided and adversarial one-step fine-tune
 
-- [`PULSE`](PULSE) — **PULSE: Unlocking Practical Image Compression on Single-Thread CPU** [[Models]](https://huggingface.co/zhaoyangjia/PULSE)
+- [`PULSE`](PULSE) — **PULSE: Unlocking Practical Image Compression on Single-Thread CPU** [[arXiv]](https://arxiv.org/abs/2609.18602) [[Models]](https://huggingface.co/zhaoyangjia/PULSE)
   - Ultra-low-complexity receiver: 5.2 kMAC/pixel for the base model, designed for single-thread CPU decoding
   - Bit-exact entropy coding with integer Linear CDF prediction, a content-adaptive Meta Prior, and CPU rANS
   - Four variable-rate MSE/perceptual models, with training recipes, independent `.pulse` compression/decompression, and CPU, H100 GPU, and mobile NPU deployment tools
@@ -56,5 +56,13 @@ If you find this work useful, please cite the relevant project:
     author    = {Jia, Zhaoyang and Xue, Naifu and Zheng, Zihan and Li, Jiahao and Li, Bin and Zhang, Xiaoyi and Guo, Zongyu and Zhang, Yuan and Li, Houqiang and Lu, Yan},
     journal   = {arXiv preprint arXiv:2604.12525},
     year      = {2026}
+}
+
+@article{jia2026pulse,
+    title     = {{PULSE}: Unlocking Practical Image Compression on Single-Thread {CPU}},
+    author    = {Jia, Zhaoyang and Zhang, Tianyu and Zheng, Zihan and Xie, Wenxuan and Li, Jiahao and Li, Bin and Li, Houqiang and Lu, Yan},
+    journal   = {arXiv preprint arXiv:2609.18602},
+    year      = {2026},
+    url       = {https://arxiv.org/abs/2609.18602}
 }
 ```
